@@ -1,0 +1,6 @@
+/bin
+/JavaStorageCleaner/.gitignore
+.settings
+.classpath
+.DS_Store
+.project
