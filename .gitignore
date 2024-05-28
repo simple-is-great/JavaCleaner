@@ -1,5 +1,8 @@
 /bin
 /JavaStorageCleaner/.gitignore
+/out
+/.idea
+JavaStorageCleaner.iml
 .settings
 .classpath
 .DS_Store
