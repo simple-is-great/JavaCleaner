@@ -1,5 +1,3 @@
-package main.java;
-
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
@@ -19,8 +17,38 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class JavaStorageCleaner {
-    private static final int bufferSize = 1024 * 1024; // TODO: think when to initialize this buffer
+    // TODO: think when to initialize this buffer
+    private static final int bufferSize = 1024 * 1024;
     private static final ByteBuffer buffer = ByteBuffer.allocateDirect(bufferSize);
+    public static List<Path> filterFilesByModifiedDate(String sourceDir, LocalDate fromDate, LocalDate toDate) throws IOException {
+        List<Path> filterResults = new ArrayList<>();
+        FileTime fromFileTime = localDateToFileTime(fromDate);
+        FileTime toFileTime = localDateToFileTime(toDate);
+
+        Files.walk(Paths.get(sourceDir))
+                .forEach(source -> {
+                    BasicFileAttributeView basicView = Files.getFileAttributeView(source, BasicFileAttributeView.class);
+                    BasicFileAttributes basicAttribs = null;
+                    try {
+                        basicAttribs = basicView.readAttributes();
+                    } catch (IOException e) {
+                        System.err.println("Error in read attributes");
+                        e.printStackTrace();
+                    }
+                    if (basicAttribs.lastModifiedTime().compareTo(fromFileTime) >= 0
+                            && basicAttribs.lastModifiedTime().compareTo(toFileTime) <= 0) {
+                        filterResults.add(source);
+                    }
+                });
+        return filterResults;
+    }
+
+    private static FileTime localDateToFileTime(LocalDate localDate) {
+        // LocalDate -> LocalDateTime -> Instant -> FileTime
+        LocalDateTime localDateTime = localDate.atStartOfDay();
+        Instant instant = localDateTime.atZone(ZoneId.systemDefault()).toInstant();
+        return FileTime.from(instant);
+    }
 
     public static void syncToCloud(String sourceDirectory, String cloudDirectory, boolean move) throws IOException {
         if (move) { // move
@@ -61,17 +89,20 @@ public class JavaStorageCleaner {
     public static byte[] fastRead(Path toReadPath) {
         FileChannel readChannel = null;
         byte[] result = null;
+        // get byte array for saving result
         try {
             result = new byte[(int) Files.size(toReadPath)];
         } catch (IOException e) {
             System.err.println("Error in getting file size");
         }
+
         // open read channel
         try {
             readChannel = FileChannel.open(toReadPath, StandardOpenOption.READ);
         } catch (IOException e) {
             e.printStackTrace();
         }
+
         // read through channel
         try {
             while (readChannel.read(buffer) >= 0) {
