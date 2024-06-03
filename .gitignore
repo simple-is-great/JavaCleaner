@@ -1,9 +1,21 @@
+# common
 /bin
-/JavaStorageCleaner/.gitignore
+/build
 /out
+
+# intelliJ related
 /.idea
 JavaStorageCleaner.iml
 .settings
 .classpath
 .DS_Store
 .project
+
+# gradle related
+/.gradle
+/gradle
+gradlew
+gradle
+gradlew.bat
+build.gradle
+settings.gradle
