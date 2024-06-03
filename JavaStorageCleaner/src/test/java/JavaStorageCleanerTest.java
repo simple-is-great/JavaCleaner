@@ -1,13 +1,13 @@
-package test.java;
-
-import main.java.JavaStorageCleaner;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -20,7 +20,7 @@ class JavaStorageCleanerTest {
 
     @Test
     void fastReadTest() {
-        String sourceDir = commonPath + "/filterTest/parent_of_tree(11725).py";
+        String sourceDir = commonPath + "/filterTest/card2(2164).py";
         Path sourcePath = Paths.get(sourceDir);
         byte[] resultBytes = null;
         try {
@@ -36,7 +36,7 @@ class JavaStorageCleanerTest {
 
     @Test
     void fastCopyTest() {
-        String sourceDir = commonPath + "/filterTest/parent_of_tree(11725).py";
+        String sourceDir = commonPath + "/filterTest/card2(2164).py";
         String targetDir = commonPath +"/card2(2164).py";
         Path sourcePath = Paths.get(sourceDir);
         Path targetPath = Paths.get(targetDir);
@@ -151,6 +151,62 @@ class JavaStorageCleanerTest {
         } catch (IOException e6) {
             e6.printStackTrace();
         }
+    }
+
+    @Test
+    void filterFilesByModifiedDateTest() {
+        String sourceDir = commonPath + "/filterTest";
+        List<Path> fileList = new ArrayList<Path>();
+        LocalDate fromDate = LocalDate.of(2024, 4, 1);
+        LocalDate toDate = LocalDate.of(2024, 5, 10);
+        List<Path> filterList = new ArrayList<>();
+        // sample data to test
+        fileList.add(Paths.get(sourceDir + "/parent_of_tree(11725).py"));
+        fileList.add(Paths.get(sourceDir + "/ordinary_bag(12865).py"));
+
+        try {
+            filterList = JavaStorageCleaner.filterFilesByModifiedDate(sourceDir, fromDate, toDate);
+        } catch (IOException e1) {
+            e1.printStackTrace();
+        }
+
+        try {
+            for (Path fp : filterList) {
+                System.out.println("filterList: " + fp);
+            }
+
+            for (Path flp : fileList) {
+                System.out.println("fileList: " + flp);
+            }
+
+            assertTrue(verifyFileFilter(filterList, fileList));
+        } catch (IOException e2) {
+            e2.printStackTrace();
+        }
+    }
+
+    private static boolean verifyFileFilter(List<Path> filterResult, List<Path> fileList) throws IOException {
+        // handle null cases
+        if (filterResult == null || fileList == null) {
+            System.out.println("null error -> false");
+            return false;
+        }
+
+        if (filterResult.size() != fileList.size()) {
+            System.out.println("list size different -> false");
+            return false;
+        }
+
+        for (int i = 0; i < filterResult.size(); i++) {
+            // for debugging
+//             System.out.println("filterResult: " + filterResult.get(i) + "\nfileList: " + fileList.get(i));
+            if (!fileContentEquals(filterResult.get(i), fileList.get(i))) {
+                System.out.println("file content not same -> false");
+                return false;
+            }
+        }
+
+        return true;
     }
 
     // method to delete a file or directory recursively
