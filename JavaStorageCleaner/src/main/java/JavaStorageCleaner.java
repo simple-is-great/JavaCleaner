@@ -27,19 +27,19 @@ public class JavaStorageCleaner {
 
         Files.walk(Paths.get(sourceDir))
                 .forEach(source -> {
-                    BasicFileAttributeView basicView = Files.getFileAttributeView(source, BasicFileAttributeView.class);
-                    BasicFileAttributes basicAttribs = null;
                     try {
-                        basicAttribs = basicView.readAttributes();
+                        if (!Files.isDirectory(source)) { // ignore directories
+                            FileTime sourceModifiedTime = Files.getLastModifiedTime(source);
+                            if (sourceModifiedTime.compareTo(fromFileTime) >= 0
+                                    && sourceModifiedTime.compareTo(toFileTime) <= 0) {
+                                filterResults.add(source);
+                            }
+                        }
                     } catch (IOException e) {
-                        System.err.println("Error in read attributes");
-                        e.printStackTrace();
-                    }
-                    if (basicAttribs.lastModifiedTime().compareTo(fromFileTime) >= 0
-                            && basicAttribs.lastModifiedTime().compareTo(toFileTime) <= 0) {
-                        filterResults.add(source);
+                        System.err.println("Error in getting modified time: " + source);
                     }
                 });
+
         return filterResults;
     }
 
@@ -72,12 +72,10 @@ public class JavaStorageCleaner {
         Files.walk(Paths.get(sourceDirectory))
                 .forEach(source -> {
                     // destination = destinationDirectoryLocation + File(Directory)
-                    // source.toString() ~ length(): get file name
                     Path destination = Paths.get(destinationDirectory, source.toString()
                             .substring(sourceDirectory.length()));
                     try {
                         // copy
-                        // REPLACE_EXISTING: replace original file when copies
                         Files.copy(source, destination, StandardCopyOption.REPLACE_EXISTING);
                     } catch (IOException e) {
                         System.err.println("Error in copying inside copyDirectory()");
