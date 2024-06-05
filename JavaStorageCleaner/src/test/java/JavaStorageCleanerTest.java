@@ -177,13 +177,10 @@ class JavaStorageCleanerTest {
             e1.printStackTrace();
         }
 
-
         try {
             assertTrue(verifyFileFilter(filterList, fileList));
         } catch (IOException e2) {
             e2.printStackTrace();
         }
     }
-
-
 }
