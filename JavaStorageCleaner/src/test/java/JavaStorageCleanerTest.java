@@ -10,8 +10,8 @@ import java.util.Arrays;
 import java.util.List;
 
 import static helper.JavaStorageCleanerTestHelper.deleteRecursively;
-import static helper.JavaStorageCleanerTestHelper.fileSizeEquals;
 import static helper.JavaStorageCleanerTestHelper.verifyCopy;
+import static helper.JavaStorageCleanerTestHelper.verifyFileFilter;
 import static helper.JavaStorageCleanerTestHelper.verifyMove;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -177,46 +177,10 @@ class JavaStorageCleanerTest {
             e1.printStackTrace();
         }
 
-
-        try { // for debugging
-//            for (Path fp : filterList) {
-//                System.out.println("filterList: " + fp);
-//            }
-//
-//            for (Path flp : fileList) {
-//                System.out.println("fileList: " + flp);
-//            }
-
+        try {
             assertTrue(verifyFileFilter(filterList, fileList));
         } catch (IOException e2) {
             e2.printStackTrace();
         }
     }
-
-    private static boolean verifyFileFilter(List<Path> filterResult, List<Path> fileList) throws IOException { // handle null cases
-        if (filterResult == null || fileList == null) {
-            System.out.println("null error -> false");
-            return false;
-        }
-
-        if (filterResult.size() != fileList.size()) {
-            System.out.println("fileList size: " + fileList.size());
-            System.out.println("filterResult size: " + filterResult.size());
-            System.out.println("list size different -> false");
-            return false;
-        }
-
-        for (int i = 0; i < filterResult.size(); i++) {
-            // for debugging
-             System.out.println("filterResult: " + filterResult.get(i) + "\nfileList: " + fileList.get(i));
-            if (!fileSizeEquals(filterResult.get(i), fileList.get(i))) {
-                System.out.println("file size not same -> false");
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-
 }

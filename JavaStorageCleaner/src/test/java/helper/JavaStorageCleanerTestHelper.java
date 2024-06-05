@@ -6,6 +6,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Comparator;
+import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -117,5 +118,30 @@ public class JavaStorageCleanerTestHelper {
         }
 
         return path1Size == path2Size;
+    }
+
+    public static boolean verifyFileFilter(List<Path> filterResult, List<Path> fileList) throws IOException { // handle null cases
+        if (filterResult == null || fileList == null) {
+            System.out.println("null error -> false");
+            return false;
+        }
+
+        if (filterResult.size() != fileList.size()) {
+            System.out.println("fileList size: " + fileList.size());
+            System.out.println("filterResult size: " + filterResult.size());
+            System.out.println("list size different -> false");
+            return false;
+        }
+
+        for (int i = 0; i < filterResult.size(); i++) {
+            // for debugging
+            System.out.println("filterResult: " + filterResult.get(i) + "\nfileList: " + fileList.get(i));
+            if (!JavaStorageCleanerTestHelper.fileSizeEquals(filterResult.get(i), fileList.get(i))) {
+                System.out.println("file size not same -> false");
+                return false;
+            }
+        }
+
+        return true;
     }
 }
