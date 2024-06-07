@@ -6,8 +6,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
-import java.nio.file.attribute.BasicFileAttributeView;
-import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileTime;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -15,11 +13,13 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 public class JavaStorageCleaner {
     // TODO: think when to initialize this buffer
-    private static final int bufferSize = 1024 * 1024;
+    private static final int bufferSize = 1000 * 1000;
     private static final ByteBuffer buffer = ByteBuffer.allocateDirect(bufferSize);
+
     public static List<Path> filterFilesByModifiedDate(String sourceDir, LocalDate fromDate, LocalDate toDate) throws IOException {
         List<Path> filterResults = new ArrayList<>();
         FileTime fromFileTime = localDateToFileTime(fromDate);
@@ -93,6 +93,75 @@ public class JavaStorageCleaner {
         } catch (IOException e) {
             System.err.println("Error in getting file size");
         }
+
+        // open read channel
+        try {
+            readChannel = FileChannel.open(toReadPath, StandardOpenOption.READ);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        // read through channel
+        try {
+            while (readChannel.read(buffer) >= 0) {
+                buffer.flip();
+                buffer.get(result);
+                buffer.clear();
+            }
+        } catch (IOException channelReadException) {
+            System.err.println(channelReadException);
+            channelReadException.printStackTrace();
+        }
+
+        return result;
+    }
+
+    public static byte[] fastRead(Path toReadPath, long amountToRead) {
+        FileChannel readChannel = null;
+        byte[] result = null;
+        // get byte array for saving result
+        try {
+            // beware: File size can overflow int value
+            // but we cannot use long for array
+            long fileSize = (int) Files.size(toReadPath);
+            if (fileSize < amountToRead) {
+                result = new byte[(int) fileSize];
+            } else {
+                result = new byte[(int) amountToRead];
+            }
+        } catch (IOException e) {
+            System.err.println("Error in reading file size");
+        }
+
+
+        // open read channel
+        try {
+            readChannel = FileChannel.open(toReadPath, StandardOpenOption.READ);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        // read through channel
+        try {
+            while (readChannel.read(buffer) >= 0) {
+                buffer.flip();
+                buffer.get(result);
+                buffer.clear();
+            }
+        } catch (IOException channelReadException) {
+            System.err.println("Error in fastRead read: " + channelReadException);
+            channelReadException.printStackTrace();
+        }
+
+        return result;
+    }
+
+    public static byte[] randomFastRead(Path toReadPath, long amountToRead) {
+        int toRead = (int) Math.random() * 1000 / 1;
+        FileChannel readChannel = null;
+        byte[] result = null;
+        // get byte array for saving result
+        result = new byte[(int) amountToRead];
 
         // open read channel
         try {

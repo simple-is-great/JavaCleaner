@@ -7,13 +7,96 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class JavaStorageCleanerTestHelper {
     // method to delete a file or directory recursively
-    private static ByteBuffer buffer1 = ByteBuffer.allocateDirect(1024 * 1024); // 1MB
-    private static ByteBuffer buffer2 = ByteBuffer.allocateDirect(1024 * 1024);
+    private static ByteBuffer buffer1 = ByteBuffer.allocateDirect(1000 * 1000); // 1MB
+    private static ByteBuffer buffer2 = ByteBuffer.allocateDirect(1000 * 1000);
+
+    public static boolean duplicateMapEquals(Map<String, List<Path>> duplicateMap1, Map<String, List<Path>> duplicateMap2) {
+        Set<String> map1Keys = duplicateMap1.keySet();
+        Set<String> map2Keys = duplicateMap2.keySet();
+
+        if (map1Keys.size() != map2Keys.size()) {
+            System.out.println("key size differs -> return false");
+            System.out.printf("map1: %d, map2: %d", map1Keys.size(), map2Keys.size());
+            // key size differs -> return false
+            return false;
+        }
+
+        for (String key : map1Keys) {
+            List<Path> innerList1 = duplicateMap1.get(key);
+            List<Path> innerList2 = duplicateMap2.get(key);
+
+            if (innerList1.size() != innerList2.size()) {
+                System.out.println("innerList size differs -> return false");
+                // return false if innerList size differs
+                return false;
+            }
+
+            for (int i = 0; i < innerList1.size(); i++) {
+                if (!innerList1.get(i).equals(innerList2.get(i))) {
+                    System.out.println("innerList element differs -> return false");
+                    // element of innerList differs
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
+
+    public static boolean pathListEquals(List<Path> pathList1, List<Path> pathList2) {
+        if (pathList1.size() != pathList2.size()) {
+            System.out.println("pathList1, pathList2 size differs! :" + pathList1.size() + pathList2.size());
+            return false;
+        }
+
+        for (int i = 0; i < pathList1.size(); i++) {
+            if (!pathList1.get(i).equals(pathList2.get(i))) {
+                System.out.println("pathList1, pathList2 element differs! :" + pathList1.get(i) + pathList2.get(i));
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    public static boolean sameSizeMapEquals(Map<Long, List<Path>> map1, Map<Long, List<Path>> map2) {
+        Set<Long> map1Keys = map1.keySet();
+        Set<Long> map2Keys = map2.keySet();
+
+        if (!map1Keys.equals(map2Keys)) {
+            System.out.println("map1 and map2 has different keys!");
+            return false;
+        }
+
+        for (Long key: map1Keys) {
+            List<Path> map1InnerList = map1.get(key);
+            List<Path> map2InnerList = map2.get(key);
+
+            if (map1InnerList.size() != map2InnerList.size()) { // List<Path> size differs
+                System.out.println("map1 and map2 innerLists has different sizes!");
+                return false;
+            }
+            for (int i = 0; i < map1InnerList.size(); i++) {
+                if (!map1InnerList.get(i).equals(map2InnerList.get(i))) {
+                    System.out.println("map1 element" + map1InnerList.get(i));
+                    System.out.println("map2 element" + map2InnerList.get(i));
+                    System.out.println("map1 and map2 innerLists has different elements!"); // path differs
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
+
+
 
     public static void deleteRecursively(String pathStr) throws IOException {
         Path path = Paths.get(pathStr);
