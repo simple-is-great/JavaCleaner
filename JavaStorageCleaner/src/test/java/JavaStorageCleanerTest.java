@@ -4,21 +4,141 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import static helper.JavaStorageCleanerTestHelper.deleteRecursively;
+import static helper.JavaStorageCleanerTestHelper.duplicateMapEquals;
+import static helper.JavaStorageCleanerTestHelper.pathListEquals;
+import static helper.JavaStorageCleanerTestHelper.sameSizeMapEquals;
 import static helper.JavaStorageCleanerTestHelper.verifyCopy;
 import static helper.JavaStorageCleanerTestHelper.verifyFileFilter;
 import static helper.JavaStorageCleanerTestHelper.verifyMove;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class JavaStorageCleanerTest {
-    private static final String commonPath = "/Users/byeonjiseob/IdeaProjects/JavaStorageCleaner/src/test/testRelated"; // TODO: change this path before you test!
+    private static final String commonPath = Paths.get("").toAbsolutePath().toString() + "/testRelated";
     private static byte[] sourceBytes = new byte[0];
     private static byte[] targetBytes = new byte[0];
+
+    @Test
+    void getPathListTest() {
+        String sourceDir = commonPath + "/listPath";
+        Path sourcePath = Paths.get(sourceDir);
+        List<Path> pathList;
+        List<Path> answer = new ArrayList<>();
+
+        answer.add(Paths.get(sourceDir + "/inner/innerfile.txt"));
+        answer.add(Paths.get(sourceDir + "/inner/innerfile2.txt"));
+        answer.add(Paths.get(sourceDir + "/inner/innerfile3.txt"));
+        answer.add(Paths.get(sourceDir + "/test.txt"));
+        answer.add(Paths.get(sourceDir + "/test2.txt"));
+        answer.add(Paths.get(sourceDir + "/test3.txt"));
+
+        pathList = DuplicateFinder.getPathList(sourcePath);
+
+        Collections.sort(answer);
+        Collections.sort(pathList);
+
+        assertTrue(pathListEquals(pathList, answer));
+    }
+
+    @Test
+    void collectSameSizeFilesTest() {
+        // this method is for collecting Paths which has identical file sizes()
+        String sourceDir = commonPath + "/listPath";
+        Path sourcePath = Paths.get(sourceDir);
+        Map<Long, List<Path>> collectResult;
+        Map<Long, List<Path>> sameSize = new HashMap();
+
+        Path path1 = Paths.get(sourceDir + "/inner/innerfile.txt");
+        Path path2 = Paths.get(sourceDir + "/inner/innerfile2.txt");
+        Path path3 = Paths.get(sourceDir + "/inner/innerfile3.txt");
+        Path path4 = Paths.get(sourceDir + "/test.txt");
+        Path path5 = Paths.get(sourceDir + "/test2.txt");
+        Path path6 = Paths.get(sourceDir + "/test3.txt");
+
+        List<Path> innerList1 = new ArrayList<>();
+        List<Path> innerList2 = new ArrayList<>();
+
+        innerList1.add(path1);
+        innerList1.add(path2);
+        innerList1.add(path3);
+        innerList2.add(path4);
+        innerList2.add(path5);
+        innerList2.add(path6);
+
+        Collections.sort(innerList1);
+        Collections.sort(innerList2);
+
+        try {
+            sameSize.put(Files.size(path1), innerList1);
+            sameSize.put(Files.size(path4), innerList2);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        collectResult = DuplicateFinder.collectSameSizeFiles(sourcePath);
+
+        assertTrue(sameSizeMapEquals(collectResult, sameSize));
+    }
+
+    @Test
+    void findDuplicatesTest() {
+        String sourceDir = commonPath + "/listPath";
+        Map<String, List<Path>> duplicateMap = DuplicateFinder.findDuplicates(sourceDir);
+
+        Map<String, List<Path>> answer = new HashMap<>();
+
+        Path path1 = Paths.get(sourceDir + "/inner/innerfile.txt");
+        Path path2 = Paths.get(sourceDir + "/inner/innerfile2.txt");
+        Path path3 = Paths.get(sourceDir + "/test.txt");
+        Path path4 = Paths.get(sourceDir + "/test2.txt");
+
+        List<Path> innerList = new ArrayList<>();
+        innerList.add(path1);
+        innerList.add(path2);
+
+        List<Path> innerList2 = new ArrayList<>();
+        innerList2.add(path3);
+        innerList2.add(path4);
+
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] hashBytes = digest.digest(DuplicateFinder.randomRead(path1, 1000 * 1000));
+            StringBuilder hexHash = new StringBuilder();
+            for (byte b : hashBytes) {
+                hexHash.append(String.format("%02x", b));
+            }
+
+            String hashStr = hexHash.toString();
+            answer.put(hashStr, innerList);
+
+            hexHash.delete(0, hexHash.length());
+            byte[] hashBytes2 = digest.digest(DuplicateFinder.randomRead(path3, 1000 * 1000));
+            for (byte b : hashBytes2) {
+                hexHash.append(String.format("%02x", b));
+            }
+
+            String hashStr2 = hexHash.toString();
+            answer.put(hashStr2, innerList2);
+
+        } catch (NoSuchAlgorithmException e) {
+            System.err.println("algorithm not valid");
+            e.printStackTrace();
+        }
+
+        assertTrue(duplicateMapEquals(duplicateMap, answer));
+    }
+
 
     @Test
     void fastReadTest() {
@@ -159,11 +279,11 @@ class JavaStorageCleanerTest {
     @Test
     void filterFilesByModifiedDateTest() {
         String sourceDir = commonPath + "/filterTest";
-        List<Path> fileList = new ArrayList<Path>();
-        LocalDate fromDate = LocalDate.of(2024, 4, 1);
-        LocalDate toDate = LocalDate.of(2024, 6, 4);
+        List<Path> fileList = new ArrayList<>();
         List<Path> filterList = new ArrayList<>();
-        // sample data to test
+        LocalDate fromDate = LocalDate.of(2024, 4, 1);
+        LocalDate toDate = LocalDate.now().plusDays(1); // tomorrow
+
         fileList.add(Paths.get(sourceDir + "/parent_of_tree(11725).py"));
         fileList.add(Paths.get(sourceDir + "/ordinary_bag(12865).py"));
         fileList.add(Paths.get(sourceDir + "/parent_of_tree(11725).py"));
