@@ -14,9 +14,6 @@ import java.util.stream.Stream;
 
 public class JavaStorageCleanerTestHelper {
     // method to delete a file or directory recursively
-    private static ByteBuffer buffer1 = ByteBuffer.allocateDirect(1000 * 1000); // 1MB
-    private static ByteBuffer buffer2 = ByteBuffer.allocateDirect(1000 * 1000);
-
     public static boolean duplicateMapEquals(Map<String, List<Path>> duplicateMap1, Map<String, List<Path>> duplicateMap2) {
         Set<String> map1Keys = duplicateMap1.keySet();
         Set<String> map2Keys = duplicateMap2.keySet();
@@ -218,7 +215,7 @@ public class JavaStorageCleanerTestHelper {
 
         for (int i = 0; i < filterResult.size(); i++) {
             // for debugging
-            System.out.println("filterResult: " + filterResult.get(i) + "\nfileList: " + fileList.get(i));
+            // System.out.println("filterResult: " + filterResult.get(i) + "\nfileList: " + fileList.get(i));
             if (!JavaStorageCleanerTestHelper.fileSizeEquals(filterResult.get(i), fileList.get(i))) {
                 System.out.println("file size not same -> false");
                 return false;

@@ -1,24 +1,22 @@
 import org.junit.jupiter.api.Test;
+import storagecleaner.FileBackup;
+import storagecleaner.FileSearch;
+import storagecleaner.SpaceSave;
+import util.FileUtility;
 
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import static helper.JavaStorageCleanerTestHelper.deleteRecursively;
 import static helper.JavaStorageCleanerTestHelper.duplicateMapEquals;
-import static helper.JavaStorageCleanerTestHelper.pathListEquals;
-import static helper.JavaStorageCleanerTestHelper.sameSizeMapEquals;
 import static helper.JavaStorageCleanerTestHelper.verifyCopy;
 import static helper.JavaStorageCleanerTestHelper.verifyFileFilter;
 import static helper.JavaStorageCleanerTestHelper.verifyMove;
@@ -26,75 +24,39 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class JavaStorageCleanerTest {
     private static final String commonPath = Paths.get("").toAbsolutePath().toString() + "/testRelated";
-    private static byte[] sourceBytes = new byte[0];
-    private static byte[] targetBytes = new byte[0];
 
     @Test
-    void getPathListTest() {
-        String sourceDir = commonPath + "/listPath";
-        Path sourcePath = Paths.get(sourceDir);
-        List<Path> pathList;
-        List<Path> answer = new ArrayList<>();
+    void filterFilesByModifiedDateTest() {
+        String sourceDir = commonPath + "/filterTest";
+        List<Path> fileList = new ArrayList<>();
+        List<Path> filterList = new ArrayList<>();
+        LocalDate fromDate = LocalDate.of(2024, 4, 1);
+        LocalDate toDate = LocalDate.now().plusDays(1); // tomorrow
 
-        answer.add(Paths.get(sourceDir + "/inner/innerfile.txt"));
-        answer.add(Paths.get(sourceDir + "/inner/innerfile2.txt"));
-        answer.add(Paths.get(sourceDir + "/inner/innerfile3.txt"));
-        answer.add(Paths.get(sourceDir + "/test.txt"));
-        answer.add(Paths.get(sourceDir + "/test2.txt"));
-        answer.add(Paths.get(sourceDir + "/test3.txt"));
-
-        pathList = DuplicateFinder.getPathList(sourcePath);
-
-        Collections.sort(answer);
-        Collections.sort(pathList);
-
-        assertTrue(pathListEquals(pathList, answer));
-    }
-
-    @Test
-    void collectSameSizeFilesTest() {
-        // this method is for collecting Paths which has identical file sizes()
-        String sourceDir = commonPath + "/listPath";
-        Path sourcePath = Paths.get(sourceDir);
-        Map<Long, List<Path>> collectResult;
-        Map<Long, List<Path>> sameSize = new HashMap();
-
-        Path path1 = Paths.get(sourceDir + "/inner/innerfile.txt");
-        Path path2 = Paths.get(sourceDir + "/inner/innerfile2.txt");
-        Path path3 = Paths.get(sourceDir + "/inner/innerfile3.txt");
-        Path path4 = Paths.get(sourceDir + "/test.txt");
-        Path path5 = Paths.get(sourceDir + "/test2.txt");
-        Path path6 = Paths.get(sourceDir + "/test3.txt");
-
-        List<Path> innerList1 = new ArrayList<>();
-        List<Path> innerList2 = new ArrayList<>();
-
-        innerList1.add(path1);
-        innerList1.add(path2);
-        innerList1.add(path3);
-        innerList2.add(path4);
-        innerList2.add(path5);
-        innerList2.add(path6);
-
-        Collections.sort(innerList1);
-        Collections.sort(innerList2);
+        fileList.add(Paths.get(sourceDir + "/parent_of_tree(11725).py"));
+        fileList.add(Paths.get(sourceDir + "/ordinary_bag(12865).py"));
+        fileList.add(Paths.get(sourceDir + "/parent_of_tree(11725).py"));
+        fileList.add(Paths.get(sourceDir + "/ordinary_bag(12865).py"));
+        fileList.add(Paths.get(sourceDir + "/parent_of_tree(11725).py"));
+        fileList.add(Paths.get(sourceDir + "/ordinary_bag(12865).py"));
 
         try {
-            sameSize.put(Files.size(path1), innerList1);
-            sameSize.put(Files.size(path4), innerList2);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+            filterList = FileSearch.filterFilesByModifiedDate(sourceDir, fromDate, toDate);
+        } catch (IOException e1) {
+            e1.printStackTrace();
         }
 
-        collectResult = DuplicateFinder.collectSameSizeFiles(sourcePath);
-
-        assertTrue(sameSizeMapEquals(collectResult, sameSize));
+        try {
+            assertTrue(verifyFileFilter(filterList, fileList));
+        } catch (IOException e2) {
+            e2.printStackTrace();
+        }
     }
 
     @Test
     void findDuplicatesTest() {
         String sourceDir = commonPath + "/listPath";
-        Map<String, List<Path>> duplicateMap = DuplicateFinder.findDuplicates(sourceDir);
+        Map<String, List<Path>> duplicateMap = SpaceSave.findDuplicates(sourceDir);
 
         Map<String, List<Path>> answer = new HashMap<>();
 
@@ -113,7 +75,7 @@ class JavaStorageCleanerTest {
 
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            byte[] hashBytes = digest.digest(DuplicateFinder.randomRead(path1, 1000 * 1000));
+            byte[] hashBytes = digest.digest(FileUtility.randomRead(path1, 1000 * 1000));
             StringBuilder hexHash = new StringBuilder();
             for (byte b : hashBytes) {
                 hexHash.append(String.format("%02x", b));
@@ -123,7 +85,7 @@ class JavaStorageCleanerTest {
             answer.put(hashStr, innerList);
 
             hexHash.delete(0, hexHash.length());
-            byte[] hashBytes2 = digest.digest(DuplicateFinder.randomRead(path3, 1000 * 1000));
+            byte[] hashBytes2 = digest.digest(FileUtility.randomRead(path3, 1000 * 1000));
             for (byte b : hashBytes2) {
                 hexHash.append(String.format("%02x", b));
             }
@@ -139,106 +101,15 @@ class JavaStorageCleanerTest {
         assertTrue(duplicateMapEquals(duplicateMap, answer));
     }
 
-
     @Test
-    void fastReadTest() {
-        String sourceDir = commonPath + "/filterTest/card2(2164).py";
-        Path sourcePath = Paths.get(sourceDir);
-        byte[] resultBytes = null;
-        try {
-            sourceBytes = Files.readAllBytes(sourcePath);
-        } catch (IOException e) {
-            System.err.println("error in reading bytes");
-            e.printStackTrace();
-        }
-
-        resultBytes = JavaStorageCleaner.fastRead(sourcePath);
-        assert (Arrays.equals(sourceBytes, resultBytes));
-    }
-
-    @Test
-    void fastCopyTest() {
-        String sourceDir = commonPath + "/filterTest/card2(2164).py";
-        String targetDir = commonPath + "/card2(2164).py";
-        Path sourcePath = Paths.get(sourceDir);
-        Path targetPath = Paths.get(targetDir);
-        JavaStorageCleaner.fastCopy(sourcePath, targetPath);
-        sourceBytes = JavaStorageCleaner.fastRead(sourcePath);
-        targetBytes = JavaStorageCleaner.fastRead(targetPath);
-        assertTrue(Arrays.equals(sourceBytes, targetBytes));
-        try {
-            Files.delete(targetPath);
-        } catch (IOException e) {
-            System.err.println("Error in deleting file");
-            e.printStackTrace();
-        }
-    }
-
-    @Test
-    void copyDirectoryTest() {
-        // check if method copies directory recursively
-        String sourceDir = commonPath + "/copyFrom";
-        String targetDir = commonPath + "/copyTo";
-
-        try {
-            JavaStorageCleaner.copyDirectory(sourceDir, targetDir);
-        } catch (IOException e1) {
-            System.err.println("Error in copying directories" + e1);
-//            e1.printStackTrace();
-        }
-
-        // check if source directory and target directory files, structures are equal
-        try {
-            assertTrue(verifyCopy(sourceDir, targetDir));
-        } catch (IOException e2) {
-            System.err.println("Error in verifying copies");
-            e2.printStackTrace();
-        }
-
-        try {
-            deleteRecursively(targetDir);
-        } catch (IOException e3) {
-            System.err.println("Error in deleting copied files");
-            e3.printStackTrace();
-        }
-    }
-
-    @Test
-    void moveDirectoryTest() {
-        String sourceDir = commonPath + "/moveFrom";
-        String targetDir = commonPath + "/moveTo";
-
-        try {
-            JavaStorageCleaner.moveDirectory(sourceDir, targetDir);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        // check if source directory and target directory files, structures are equal
-        try {
-            assertTrue(verifyMove(sourceDir, targetDir));
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        // rollback -> move targetDir back to sourceDir
-        try {
-            JavaStorageCleaner.moveDirectory(targetDir, sourceDir);
-        } catch (IOException e3) {
-            System.out.println("Error occurred in moving source file");
-            e3.printStackTrace();
-        }
-    }
-
-    @Test
-    void syncToCloudTest() {
+    void backupFilesTest() {
         // feature 4: sync folders to cloud
         String sourceDir = commonPath + "/syncFrom";
         String cloudDir = "/Users/byeonjiseob/Library/Mobile Documents/com~apple~CloudDocs/syncTo";
 
         // move
         try {
-            JavaStorageCleaner.syncToCloud(sourceDir, cloudDir, true); // last parameter: move flag
+            FileBackup.backupFiles(sourceDir, cloudDir, true); // last parameter: move flag
         } catch (IOException e1) {
             e1.printStackTrace();
         }
@@ -251,14 +122,14 @@ class JavaStorageCleanerTest {
 
         // rollback
         try {
-            JavaStorageCleaner.moveDirectory(cloudDir, sourceDir);
+            FileUtility.moveDirectory(cloudDir, sourceDir);
         } catch (IOException e3) {
             e3.printStackTrace();
         }
 
         // copy
         try {
-            JavaStorageCleaner.syncToCloud(sourceDir, cloudDir, false);
+            FileBackup.backupFiles(sourceDir, cloudDir, false);
         } catch (IOException e4) {
             e4.printStackTrace();
         }
@@ -273,34 +144,6 @@ class JavaStorageCleanerTest {
             deleteRecursively(cloudDir);
         } catch (IOException e6) {
             e6.printStackTrace();
-        }
-    }
-
-    @Test
-    void filterFilesByModifiedDateTest() {
-        String sourceDir = commonPath + "/filterTest";
-        List<Path> fileList = new ArrayList<>();
-        List<Path> filterList = new ArrayList<>();
-        LocalDate fromDate = LocalDate.of(2024, 4, 1);
-        LocalDate toDate = LocalDate.now().plusDays(1); // tomorrow
-
-        fileList.add(Paths.get(sourceDir + "/parent_of_tree(11725).py"));
-        fileList.add(Paths.get(sourceDir + "/ordinary_bag(12865).py"));
-        fileList.add(Paths.get(sourceDir + "/parent_of_tree(11725).py"));
-        fileList.add(Paths.get(sourceDir + "/ordinary_bag(12865).py"));
-        fileList.add(Paths.get(sourceDir + "/parent_of_tree(11725).py"));
-        fileList.add(Paths.get(sourceDir + "/ordinary_bag(12865).py"));
-
-        try {
-            filterList = JavaStorageCleaner.filterFilesByModifiedDate(sourceDir, fromDate, toDate);
-        } catch (IOException e1) {
-            e1.printStackTrace();
-        }
-
-        try {
-            assertTrue(verifyFileFilter(filterList, fileList));
-        } catch (IOException e2) {
-            e2.printStackTrace();
         }
     }
 }
