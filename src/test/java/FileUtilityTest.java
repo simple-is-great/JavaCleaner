@@ -36,7 +36,7 @@ public class FileUtilityTest {
         answer.add(Paths.get(sourceDir + "/inner/innerfile.txt"));
         answer.add(Paths.get(sourceDir + "/inner/innerfile2.txt"));
         answer.add(Paths.get(sourceDir + "/inner/innerfile3.txt"));
-        answer.add(Paths.get(sourceDir + "/test.txt"));
+        answer.add(Paths.get(sourceDir + "/test1.txt"));
         answer.add(Paths.get(sourceDir + "/test2.txt"));
         answer.add(Paths.get(sourceDir + "/test3.txt"));
 
@@ -59,7 +59,7 @@ public class FileUtilityTest {
         Path path1 = Paths.get(sourceDir + "/inner/innerfile.txt");
         Path path2 = Paths.get(sourceDir + "/inner/innerfile2.txt");
         Path path3 = Paths.get(sourceDir + "/inner/innerfile3.txt");
-        Path path4 = Paths.get(sourceDir + "/test.txt");
+        Path path4 = Paths.get(sourceDir + "/test1.txt");
         Path path5 = Paths.get(sourceDir + "/test2.txt");
         Path path6 = Paths.get(sourceDir + "/test3.txt");
 

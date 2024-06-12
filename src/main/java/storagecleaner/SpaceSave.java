@@ -1,10 +1,16 @@
 package storagecleaner;
 
+import util.FileUtility;
+
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -15,11 +21,34 @@ import static util.FileUtility.randomRead;
 
 public class SpaceSave {
     public static long DUPLICATE_LOWER_BOUND = 0; // feature 2: save space
+    public static long BIGFILE_LOWER_BOUND = 1000;
+
     private static long INITIAL_READ = 1000 * 1000;
 
     public static List<Path> findBigFiles(String sourceDirectory) {
+        Path sourceDir = Paths.get(sourceDirectory);
+        List<Path> pathList = FileUtility.getPathList(sourceDir);
         List<Path> bigFiles = new ArrayList<>();
-        // TODO: implement this
+
+        try {
+            for (Path p : pathList) {
+                long size = Files.size(p);
+                if (size >= BIGFILE_LOWER_BOUND) {
+                    bigFiles.add(p);
+                }
+
+                // sort by file size in descending order
+                Collections.sort(bigFiles, (p1, p2) -> {
+                    try {
+                        return (int)(Files.size(p2) - Files.size(p1));
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                });
+            }
+        } catch (IOException e) {
+            System.err.println("Error in getting file size: ");
+        }
         return bigFiles;
     }
 
