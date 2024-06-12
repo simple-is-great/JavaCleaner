@@ -160,7 +160,7 @@ public class FileUtility {
             for (Path p : pathList) {
                 Long size = Files.size(p);
                 List<Path> innerList;
-                if (size > (Long) minFilterFileSize) { // can replace with DUPLICATE_LOWER_BOUND
+                if (size > (Long) minFilterFileSize) { // can replace with minFilterFileSize
                     innerList = sizePathMap.get(size);
                     if (innerList == null) {
                         innerList = new ArrayList<>();

@@ -5,21 +5,25 @@ import storagecleaner.SpaceSave;
 import util.FileUtility;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import static helper.JavaStorageCleanerTestHelper.deleteRecursively;
 import static helper.JavaStorageCleanerTestHelper.duplicateMapEquals;
+import static helper.JavaStorageCleanerTestHelper.pathListEquals;
 import static helper.JavaStorageCleanerTestHelper.verifyCopy;
 import static helper.JavaStorageCleanerTestHelper.verifyFileFilter;
 import static helper.JavaStorageCleanerTestHelper.verifyMove;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class JavaStorageCleanerTest {
@@ -52,6 +56,31 @@ class JavaStorageCleanerTest {
             e2.printStackTrace();
         }
     }
+    @Test
+    void findBigFilesTest() {
+        String sourceDir = commonPath + "/listPath";
+        List<Path> result = SpaceSave.findBigFiles(sourceDir);
+        List<Path> bigFiles = new ArrayList<>();
+
+        Path path1 = Paths.get(sourceDir + "/test1.txt");
+        Path path2 = Paths.get(sourceDir + "/test2.txt");
+        Path path3 = Paths.get(sourceDir + "/test3.txt");
+
+        bigFiles.add(path1);
+        bigFiles.add(path2);
+        bigFiles.add(path3);
+
+        // sort by file size in descending order
+        Collections.sort(bigFiles, (p1, p2) -> {
+            try {
+                return (int)(Files.size(p2) - Files.size(p1));
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        });
+
+        assertTrue(pathListEquals(result, bigFiles));
+    }
 
     @Test
     void findDuplicatesTest() {
@@ -62,7 +91,7 @@ class JavaStorageCleanerTest {
 
         Path path1 = Paths.get(sourceDir + "/inner/innerfile.txt");
         Path path2 = Paths.get(sourceDir + "/inner/innerfile2.txt");
-        Path path3 = Paths.get(sourceDir + "/test.txt");
+        Path path3 = Paths.get(sourceDir + "/test1.txt");
         Path path4 = Paths.get(sourceDir + "/test2.txt");
 
         List<Path> innerList = new ArrayList<>();
