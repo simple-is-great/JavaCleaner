@@ -16,6 +16,7 @@ import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -171,12 +172,17 @@ public class FileUtility {
                     sizePathMap.put(size, innerList);
                 }
             }
-            for (Long key : sizePathMap.keySet()) {
-                if (sizePathMap.get(key).size() == 1) {
+
+            Iterator<Map.Entry<Long, List<Path>>> iterator = sizePathMap.entrySet().iterator();
+            while (iterator.hasNext()) {
+                Map.Entry<Long, List<Path>> entry = iterator.next();
+                if (entry.getValue().size() == 1) {
                     // remove innerList with size 1
-                    sizePathMap.remove(key);
+                    // use Iterator to prevent ConcurrentModificationException
+                    iterator.remove();
                 }
             }
+
         } catch (IOException e) {
             System.err.println("Error in getting file size: ");
         }
