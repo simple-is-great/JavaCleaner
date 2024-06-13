@@ -1,0 +1,20 @@
+# common
+/bin
+/build
+/out
+
+# intelliJ related
+/.idea
+JavaStorageCleaner.iml
+.settings
+.classpath
+.DS_Store
+.project
+
+# gradle related
+/.gradle
+/gradle
+gradlew
+gradlew.bat
+build.gradle
+settings.gradle
