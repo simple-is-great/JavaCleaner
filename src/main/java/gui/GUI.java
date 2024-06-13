@@ -69,23 +69,6 @@ public class GUI extends JFrame {
 	public GUI() {
 		super("Java Storage Cleaner");
 
-//		/* Redirect output and error message */
-//		try (FileOutputStream fos = new FileOutputStream("output.log");
-//			 DataOutputStream dos = new DataOutputStream(fos)) {
-//
-//			// redirect System.out, System.err using PrintStream
-//			ObjectOutputStream objectOut = new ObjectOutputStream(dos);
-//
-//			// System.out을 ObjectOutputStream으로 변경
-//			System.setOut(new PrintStream(objectOut, true));
-//			System.setErr(new PrintStream(objectOut, true));
-//
-//		} catch (FileNotFoundException e) {
-//            throw new RuntimeException(e);
-//        } catch (IOException e) {
-//            throw new RuntimeException(e);
-//        }
-
         /* set JFrame */
 		setSize(defaultSet.WIDTH, defaultSet.HEIGHT);
 		setResizable(false);
@@ -126,7 +109,7 @@ public class GUI extends JFrame {
 		leftPanel.add(fileSearchBtn);
 		leftPanel.add(spaceMakerBtn);
 		leftPanel.add(fileBackUpBtn);
-		leftPanel.add(logBtn);
+//		leftPanel.add(logBtn);
 		
 		/* set rightPanel */
 		rightPanel.setLayout(new CardLayout());
@@ -156,7 +139,7 @@ public class GUI extends JFrame {
 		fileSearchPage(page[1]);
 		spaceMakerPage(page[2]);
 		fileBackupPage(page[3]);
-		logPage(page[4]);
+//		logPage(page[4]);
 		
 		
 		for(int i = 0; i < page.length; i++)
@@ -292,6 +275,7 @@ public class GUI extends JFrame {
 		p.add(typeField[3]);
 		p.add(tablePanel[5]);
 	}
+
 	private void logPage(JPanel p) {
 		JLabel RTitle = new JLabel(" Java Storage Cleaner");
 		RTitle.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 30));
